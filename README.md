@@ -1,22 +1,14 @@
-# create-svelte
+# AIWA-Svelte
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/master/packages/create-svelte).
+AIWA (AI web application) Svelte is a simple web interface for interacting with [AIWA.API](https://github.com/ltlian/aiwa-api).
 
-## Creating a project
+## Running locally
 
-If you're seeing this, you've probably already done this step. Congrats!
-
-```bash
-# create a new project in the current directory
-npm create svelte@latest
-
-# create a new project in my-app
-npm create svelte@latest my-app
-```
+Create `.env.local` in the root folder based on `.env.example` in order to set the API endpoint url during development.
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Once you've installed dependencies with `npm install`, start a development server:
 
 ```bash
 npm run dev
