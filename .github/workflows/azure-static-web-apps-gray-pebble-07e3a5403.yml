@@ -15,6 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
+      - name: Log in to azure as service principal
+        uses: azure/login@v1
+        with:
+          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_SP_PASSWORD }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
+      - name: Set vite environment
+        run: |
+          echo "VITE_AIWA_API_HOST=https://$(az webapp show -n aiwa-api -g aiwa --query 'defaultHostName' -o tsv)" >> $GITHUB_ENV
+          echo "VITE_COMMIT_SHA=$GITHUB_SHA" >> $GITHUB_ENV
       - uses: actions/checkout@v3
         with:
           submodules: true
