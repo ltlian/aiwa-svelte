@@ -1,0 +1,14 @@
+:root {
+	--color-background: rgb(36, 35, 30);
+	--color-primary-text: rgb(255, 240, 214);
+	--color-surface: rgb(218, 212, 187);
+	--color-input-background: rgba(0, 0, 0, 0.1);
+	--color-input-background-active: rgba(231, 227, 166, 0.1);
+	--color-primary-warn: rgb(205, 102, 77);
+	--color-outline: rgb(176, 171, 151);
+	--color-action: #fff;
+	--color-action-background: rgb(54, 52, 46);
+	--color-action-2: rgb(14, 206, 72);
+	--color-button-background-hover: var(--color-surface);
+	--color-text-on-action: var(--color-surface);
+}

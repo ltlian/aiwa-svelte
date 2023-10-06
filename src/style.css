@@ -1,0 +1,189 @@
+:root {
+	font-family: 'Roboto', Arial, Helvetica, sans-serif;
+	--primary: #ff3b5c9a;
+	--secondary: #ffcf2f54;
+	--action: #1c8;
+	--selection: #138;
+	--flex-gap: 12px;
+	--offset: 64px;
+}
+button:not(:disabled) {
+	cursor: pointer;
+}
+html,
+body {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	padding: 0;
+}
+.base-centered {
+	width: 80%;
+	margin: 0 auto;
+	padding: 4em;
+}
+@media (min-width: 768px) {
+	.base-centered {
+		width: 40%;
+	}
+}
+.input-row {
+	position: relative;
+	min-height: 3em;
+}
+.input-row fieldset {
+	border: none;
+	margin: 0;
+	padding: 0;
+}
+.nudge-left {
+	position: absolute;
+	left: -40px;
+}
+.input-row fieldset input {
+	border: none;
+	outline: none;
+	border-bottom: 1px solid #0000002a;
+	transition: border-bottom 0.5s ease;
+	margin: 10px 0 10px 0;
+	width: 100%;
+}
+.input-row fieldset input:focus {
+	border-bottom: 1px solid #000000;
+}
+
+main form button {
+	border-radius: 5px;
+	border: none;
+	transition: background-color 0.3s ease;
+}
+main form button:focus-within {
+	outline: 2px solid #2081ff;
+}
+main form button:hover:not(:disabled) {
+	background-color: var(--secondary);
+}
+xmain form input {
+	flex: 1;
+}
+button:disabled {
+	opacity: 35%;
+}
+button.symbol {
+	width: 30px;
+	height: 30px;
+	font-size: larger;
+	background-color: #fff;
+}
+button.add {
+	color: var(--action);
+}
+button.add::before {
+	content: '\2B';
+}
+button.remove {
+	color: #f04;
+}
+button.remove::before {
+	/* content: '\2716'; */
+	content: '\2A2F';
+}
+button.reset {
+	width: 60px;
+	height: 30px;
+	border: 2px dotted orange;
+}
+button.call {
+	font-size: larger;
+	padding: 0.5em;
+	color: #fff;
+	xgrid-column: 2;
+	background-color: var(--action);
+}
+.result-box {
+	border: 1px solid rgba(7, 7, 7, 0.2);
+	border-radius: 3px;
+	background-color: #00000008;
+	padding: 1em;
+	min-height: 4em;
+	grid-column: 2;
+}
+.overlay {
+	justify-self: center;
+	align-self: center;
+	pointer-events: none;
+	position: absolute;
+}
+.nova {
+	width: 120px;
+	height: 120px;
+	border-radius: 50%;
+	background-color: var(--primary);
+	animation-name: f2;
+	animation-duration: 1s;
+	animation-fill-mode: forwards;
+}
+.loader {
+	width: 120px;
+	height: 120px;
+	border-radius: 50%;
+	border: 25px solid #0000;
+	border-top-color: var(--primary);
+	border-bottom-color: var(--secondary);
+	animation: f1 2s infinite ease;
+	align-self: center;
+	position: absolute;
+}
+.loader:before,
+.loader:after {
+	content: '';
+	position: absolute;
+	inset: -8px;
+	border-radius: 50%;
+	border: inherit;
+	animation: inherit;
+	animation-duration: 4s;
+}
+
+@keyframes f0 {
+	0% {
+		border-width: 1px;
+		border-color: red;
+	}
+	100% {
+		border-width: 10px;
+		border-color: white;
+	}
+}
+
+@keyframes f1 {
+	100% {
+		transform: rotate(1turn);
+	}
+}
+
+@keyframes f2 {
+	0% {
+		opacity: 0;
+	}
+	5% {
+		opacity: 1;
+	}
+	30% {
+		opacity: 0;
+		transform: scale(3);
+	}
+	100% {
+		opacity: 0;
+	}
+}
+
+.dbg-row {
+	border: 1px dotted orange;
+	position: relative;
+}
+
+.dbg-field {
+	border: 1px dotted greenyellow;
+}
