@@ -1,7 +1,21 @@
 import type { AiwaRequest } from './aiwaRequest';
 
+declare global {
+	var aiwaConfig: {
+		baseUrl?: string;
+		endpoints?: {
+			generateUkesmail?: string;
+			healthz?: string;
+		};
+	};
+}
+
 const config = {
-	baseUrl: new URL(import.meta.env.VITE_AIWA_API_HOST),
+	baseUrl: new URL(globalThis.aiwaConfig?.baseUrl || import.meta.env.VITE_AIWA_API_HOST),
+	endpoints: {
+		generateUkesmail: globalThis.aiwaConfig?.endpoints?.generateUkesmail || 'generate/ukesmail',
+		healthz: globalThis.aiwaConfig?.endpoints?.healthz || 'healthz'
+	},
 	timeoutMs: 360000
 };
 
@@ -10,8 +24,8 @@ const headersAcceptStream: HeadersInit = {
 	'Content-Type': 'application/json'
 };
 
-const generateUrl = new URL('generate/ukesmail', config.baseUrl);
-const healthCheckUrl = new URL('healthz', config.baseUrl);
+const generateUrl = new URL(config.endpoints.generateUkesmail, config.baseUrl);
+const healthCheckUrl = new URL(config.endpoints.healthz, config.baseUrl);
 
 export async function callChunkedAsync(
 	request: AiwaRequest,
