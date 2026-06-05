@@ -16,7 +16,7 @@
 					console.error('API responded with non-success.', e);
 				}
 			})
-			.catch((a) => {
+			.catch(() => {
 				console.error('An error occurred while checking API liveness.');
 			});
 	});
@@ -28,13 +28,11 @@
 
 	let inputs: string[] = [''];
 	let canAdd: boolean = true;
-	let canRemove: boolean = false;
 	let canSubmit: boolean = true;
 	let isError = false;
 	let isFetching: boolean = false;
 	let isReading: boolean = false;
 	$: canAdd = inputs.length < MAX_INPUTS && !anyEmpty(inputs);
-	$: canRemove = inputs.length !== 0;
 	$: canSubmit = !isFetching && anyContains(inputs);
 
 	const handleRemoveField = (idx: number) => {
@@ -45,14 +43,14 @@
 		}
 	};
 
-	const handleReset = (e: MouseEvent) => {
+	const handleReset = () => {
 		inputs = [''];
 		isError = false;
 		errorMessage = null;
 		responseSegments = [];
 	};
 
-	const addFieldHandler = (value: string, idx: number) => {
+	const addFieldHandler = (value: string) => {
 		if (value.length !== 0 && inputs.length < MAX_INPUTS) {
 			handleAddField();
 		}
@@ -77,19 +75,21 @@
 
 	const focusAction = (e: HTMLInputElement) => e.focus();
 
-	function handleOnKeyDown(e: any, i: number) {
+	function handleOnKeyDown(e: KeyboardEvent, i: number) {
+		const input = e.currentTarget as HTMLInputElement;
+
 		if (e.key === 'Enter') {
 			e.preventDefault();
 			if (inputs.length >= MAX_INPUTS || (inputs[i].length === 0 && inputs.length - 1 >= i)) {
 				focusSubmitButton();
 			} else {
-				addFieldHandler(e.currentTarget.value, i);
+				addFieldHandler(input.value);
 			}
 		} else if (e.key === 'Backspace' && inputs[i].length === 0) {
 			e.preventDefault();
 			handleRemoveField(i);
 		} else if (e.key !== 'Tab') {
-			inputs[i] = e.currentTarget.value;
+			inputs[i] = input.value;
 		}
 	}
 
@@ -108,13 +108,6 @@
 				isFetching = false;
 				isReading = false;
 			});
-	}
-
-	function handleOnSubmit2(params: string[]) {
-		isFetching = true;
-		// responseSegments = [];
-		responseSegments = appendSegment(responseSegments, 'Linje 1\n\nLinje 2\n\nLinje 3');
-		isFetching = false;
 	}
 
 	/**

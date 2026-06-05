@@ -1,0 +1,48 @@
+name: ${COMPOSE_PROJECT_NAME:-aiwa-ui}
+
+services:
+  aiwa-ui:
+    container_name: ${CONTAINER_NAME:-aiwa-ui}
+    build:
+      context: .
+      dockerfile: docker/codex/Dockerfile
+      args:
+        USERNAME: codex
+        USER_UID: 1001
+        USER_GID: 1001
+    image: ${SANDBOX_IMAGE:-aiwa-ui:latest}
+    working_dir: /workspace
+    security_opt:
+      - seccomp=unconfined
+    environment:
+      TERM: ${CODEX_TERM:-xterm-sixel}
+      COLORTERM: ${CODEX_COLORTERM:-truecolor}
+      FORCE_COLOR: ${FORCE_COLOR:-1}
+      WT_SESSION: ${WT_SESSION:-}
+      TERM_PROGRAM: ${TERM_PROGRAM:-}
+      KITTY_WINDOW_ID: ${KITTY_WINDOW_ID:-}
+      KITTY_LISTEN_ON: ${KITTY_LISTEN_ON:-}
+      WEZTERM_PANE: ${WEZTERM_PANE:-}
+      WEZTERM_UNIX_SOCKET: ${WEZTERM_UNIX_SOCKET:-}
+      SSH_PUBLIC_KEY: ${SSH_PUBLIC_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      VITE_AIWA_API_HOST: ${VITE_AIWA_API_HOST:-https://host.docker.internal:7125}
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    ports:
+      - '127.0.0.1:${HOST_SSH_PORT:-6022}:22'
+      - '127.0.0.1:${HOST_VITE_PORT:-6173}:5173'
+      - '127.0.0.1:${HOST_PREVIEW_PORT:-6174}:4173'
+    volumes:
+      - .:/workspace
+      - ssh-host-keys:/etc/ssh
+      - codex-home:/home/codex/.codex
+      - codex-cache:/home/codex/.cache
+      - codex-npm:/home/codex/.npm
+    restart: unless-stopped
+
+volumes:
+  ssh-host-keys:
+  codex-home:
+  codex-cache:
+  codex-npm:

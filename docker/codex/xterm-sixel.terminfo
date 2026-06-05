@@ -1,0 +1,2 @@
+xterm-sixel|xterm with sixel graphics,
+	use=xterm-256color,
