@@ -4,13 +4,14 @@ AIWA (AI web application) Svelte is a simple web interface for interacting with 
 
 ## Running locally
 
-Create `.env.local` in the root folder based on `.env.example` in order to set the API endpoint url during development.
+Use Node.js 20.19 or newer. Create `.env.local` in the root folder based on `.env.example` to set the API endpoint URL during development.
 
 ## Developing
 
-Once you've installed dependencies with `npm install`, start a development server:
+Install dependencies and start a development server:
 
 ```bash
+npm install
 npm run dev
 
 # or start the server and open the app in a new browser tab
@@ -27,4 +28,4 @@ npm run build
 
 You can preview the production build with `npm run preview`.
 
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+The project is configured to build for Azure Static Web Apps.
