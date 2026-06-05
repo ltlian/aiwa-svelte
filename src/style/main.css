@@ -3,68 +3,111 @@
 	--flex-gap: 12px;
 	--offset: 42px;
 }
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
 html,
 body {
-	height: 100%;
-	display: flex;
-	flex-direction: column;
+	min-height: 100%;
 	margin: 0;
 	padding: 0;
+}
+
+body {
+	display: flex;
+	flex-direction: column;
 	background-color: var(--color-background);
 	color: var(--color-primary-text);
 }
+
 header {
 	padding-left: 0.5em;
 	color: var(--color-text-on-action);
 	background-color: var(--color-action-background);
 }
+
 @media (max-width: 980px) {
 	header {
 		font-size: smaller;
 	}
 }
+
 footer {
 	font-size: small;
 	opacity: 0.5;
 }
-footer div {
+
+#commit-container {
 	float: right;
 }
+
 button {
 	border: none;
+	font: inherit;
 	transition: background-color 0.3s ease;
 	color: var(--color-text-on-action);
 	background-color: var(--color-action-background);
 }
+
 button:not(:disabled) {
 	cursor: pointer;
 }
+
 button:disabled {
 	opacity: 35%;
 }
+
 button:hover:not(:disabled) {
 	background-color: var(--color-button-background-hover);
 	color: var(--color-action);
 }
+
+button:focus-visible,
+input:focus-visible {
+	outline: none;
+	background-color: var(--color-button-background-hover);
+	color: var(--color-action);
+}
+
 .base-centered {
 	width: 80%;
 	margin: 0 auto;
 	padding: 4em;
 }
+
 @media (min-width: 980px) {
 	.base-centered {
 		width: 40%;
 	}
 }
+
 main form {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
 }
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
 .input-row {
 	position: relative;
 	height: 42px;
 }
+
 .input-row fieldset {
 	display: flex;
 	height: 100%;
@@ -72,13 +115,16 @@ main form {
 	margin: 0;
 	padding: 0;
 }
+
 .input-row fieldset:disabled {
 	opacity: 35%;
 }
+
 .nudge-left {
 	position: absolute;
 	left: calc(var(--offset) * -1);
 }
+
 .input-row fieldset input {
 	height: 100%;
 	flex: 1;
@@ -91,51 +137,50 @@ main form {
 	color: var(--color-primary-text);
 	background-color: var(--color-input-background);
 }
+
 .input-row fieldset input:focus {
 	border-style: none;
 	border-color: var(--color-outline);
 	background-color: var(--color-input-background-active);
 }
-input:focus-within {
-	outline: none;
-	background-color: var(--color-button-background-hover);
-	color: var(--color-action);
-}
-button:focus-within {
-	outline: none;
-	background-color: var(--color-button-background-hover);
-	color: var(--color-action);
-}
+
 button.symbol {
 	width: var(--offset);
 	font-size: 24px;
 	height: 100%;
 }
+
 button.add::before,
 button.remove::before {
 	content: '\2B';
 }
+
 button.remove::before {
 	display: inline-block;
 	transform: rotate(45deg);
 }
+
 .flex-end {
 	display: flex;
 	justify-content: end;
 	gap: 10px;
 }
+
 button.reset {
 	height: 100%;
 	width: 42px;
 }
+
 button.reset::before {
 	font-size: 20px;
 	content: '\21BB';
 }
+
 button.call {
 	height: 100%;
 	font-size: larger;
 }
+
 .result-box {
 	border: 1px solid rgba(7, 7, 7, 0.2);
 	border-radius: 3px;
@@ -144,16 +189,20 @@ button.call {
 	min-height: 4em;
 	grid-column: 2;
 }
+
 .result-box > p > span {
 	animation: fade-in 1s ease-out;
 }
+
 .error-box {
 	border: 1px solid var(--color-primary-warn);
 	padding: 1em;
 }
+
 .relative-container {
 	position: relative;
 }
+
 .overlay {
 	pointer-events: none;
 	position: absolute;
@@ -161,6 +210,7 @@ button.call {
 	left: 50%;
 	transform: translate(-50%, -50%);
 }
+
 .loader {
 	width: 120px;
 	height: 120px;
@@ -170,6 +220,7 @@ button.call {
 	border-bottom-color: var(--color-action-background);
 	animation: anim-turn 2s infinite ease;
 }
+
 .loader:before,
 .loader:after {
 	content: '';
@@ -187,6 +238,7 @@ button.call {
 		transform: rotate(1turn);
 	}
 }
+
 @keyframes fade-in {
 	0% {
 		color: #000;

@@ -1,6 +1,6 @@
 .git
-.svelte-kit
 build
+dist
 node_modules
 npm-debug.log
 coverage

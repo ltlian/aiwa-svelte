@@ -1,6 +1,8 @@
-# AIWA-Svelte
+# AIWA UI
 
-AIWA (AI web application) Svelte is a simple web interface for interacting with [AIWA.API](https://github.com/ltlian/aiwa-api).
+AIWA UI is a simple web interface for interacting with [AIWA.API](https://github.com/ltlian/aiwa-api).
+
+The app is built with plain HTML, JavaScript, CSS, and Vite.
 
 ## Running locally
 
@@ -47,5 +49,3 @@ npm run build
 ```
 
 You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.

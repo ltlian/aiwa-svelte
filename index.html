@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="nb-NO">
+	<head>
+		<meta charset="UTF-8" />
+		<link rel="icon" href="/favicon.png" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Ukesmailgenerator</title>
+		<script type="module" src="/src/main.js"></script>
+	</head>
+	<body>
+		<div class="base-centered">
+			<header>
+				<h1 id="page-title">UKESMAILGENERATOR</h1>
+			</header>
+
+			<main aria-labelledby="page-title">
+				<form id="ukesmail-form" action="" autocomplete="off" aria-describedby="usage-notes">
+					<div id="input-list"></div>
+
+					<div id="add-row" class="input-row">
+						<button title="Legg til" type="button" class="add symbol nudge-left">
+							<span class="sr-only">Legg til felt</span>
+						</button>
+					</div>
+
+					<div class="relative-container">
+						<div id="loading-overlay" class="overlay" hidden>
+							<div class="loader"></div>
+						</div>
+						<div id="result-box" class="result-box" aria-live="polite"></div>
+						<div id="error-box" class="error-box" role="alert" hidden>
+							<code></code>
+						</div>
+					</div>
+
+					<div class="input-row flex-end">
+						<button type="button" title="Tøm alle felt" class="reset">
+							<span class="sr-only">Tøm alle felt</span>
+						</button>
+						<button type="submit" id="button-submit" class="call">Send</button>
+					</div>
+				</form>
+			</main>
+
+			<footer id="usage-notes">
+				<p>Skriv inn opp til fem saker som skal tas opp i ukesmailen.</p>
+				<p>
+					Ikke inkluder personlig informasjon. Bruk heller forfalsket informasjon som du selv
+					erstatter i resultatet.
+				</p>
+				<div id="commit-container" hidden>
+					<small id="commit-sha"></small>
+				</div>
+			</footer>
+		</div>
+	</body>
+</html>
