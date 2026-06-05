@@ -33,7 +33,7 @@ export async function callChunkedAsync(
 ): Promise<void> {
 	const body: BodyInit = JSON.stringify(request);
 	const controller = new AbortController();
-	const _ = setTimeout(() => controller.abort(), config.timeoutMs);
+	const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
 
 	const options: RequestInit = {
 		credentials: 'omit',
@@ -43,24 +43,28 @@ export async function callChunkedAsync(
 		signal: controller.signal
 	};
 
-	var response = await fetch(generateUrl, options);
-	if (response.body == null) throw Error();
+	try {
+		const response = await fetch(generateUrl, options);
+		if (response.body == null) throw Error();
 
-	const reader = response.body.getReader();
-	let result = await reader.read();
-	const textDecoder = new TextDecoder();
-	while (!result.done) {
-		const segment = textDecoder.decode(result.value);
+		const reader = response.body.getReader();
+		let result = await reader.read();
+		const textDecoder = new TextDecoder();
+		while (!result.done) {
+			const segment = textDecoder.decode(result.value);
 
-		callback(segment);
+			callback(segment);
 
-		result = await reader.read();
+			result = await reader.read();
+		}
+	} finally {
+		clearTimeout(timeout);
 	}
 }
 
-export function callHealthCheckAsync(): Promise<Response> {
+export async function callHealthCheckAsync(): Promise<Response> {
 	const controller = new AbortController();
-	const _ = setTimeout(() => controller.abort(), config.timeoutMs);
+	const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
 
 	const options: RequestInit = {
 		credentials: 'omit',
@@ -68,5 +72,9 @@ export function callHealthCheckAsync(): Promise<Response> {
 		signal: controller.signal
 	};
 
-	return fetch(healthCheckUrl, options);
+	try {
+		return await fetch(healthCheckUrl, options);
+	} finally {
+		clearTimeout(timeout);
+	}
 }

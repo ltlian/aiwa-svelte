@@ -1,120 +1,131 @@
 <script lang="ts">
-	import '../style/theme.css';
 	import { callChunkedAsync, callHealthCheckAsync } from '$lib/client';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
+	import '../style/theme.css';
 
 	const MAX_INPUTS = 5;
 	const MAX_FIELD_LENGTH = 127;
 
-	let responseSegments: string[][] = [[]];
-	let errorMessage: string | null;
+	type InputField = {
+		id: number;
+		value: string;
+	};
+
+	let nextInputId = 1;
+	let responseSegments = $state<string[][]>([[]]);
+	let errorMessage = $state<string | null>(null);
+	let inputs = $state<InputField[]>([{ id: 0, value: '' }]);
+	let inputElements = $state<HTMLInputElement[]>([]);
+	let submitButton = $state<HTMLButtonElement>();
+	let isError = $state(false);
+	let isFetching = $state(false);
+	let isReading = $state(false);
+
+	const anyContains = (strings: string[]): boolean => strings.some((s) => s.length !== 0);
+
+	const anyEmpty = (strings: string[]): boolean => strings.some((s) => s.length === 0);
+
+	const inputValues = $derived(inputs.map((input) => input.value));
+	const canAdd = $derived(inputs.length < MAX_INPUTS && !anyEmpty(inputValues));
+	const canRemove = $derived(inputs.length > 1);
+	const canSubmit = $derived(!isFetching && anyContains(inputValues));
+
+	const createInput = (value = ''): InputField => ({ id: nextInputId++, value });
 
 	onMount(() => {
 		callHealthCheckAsync()
-			.then((e) => {
-				if (e.status !== 200) {
-					console.error('API responded with non-success.', e);
+			.then((response) => {
+				if (response.status !== 200) {
+					console.error('API responded with non-success.', response);
 				}
 			})
-			.catch((a) => {
+			.catch(() => {
 				console.error('An error occurred while checking API liveness.');
 			});
 	});
 
-	const anyContains = (strings: string[]): boolean =>
-		strings.findIndex((s) => s.length !== 0) !== -1;
-
-	const anyEmpty = (strings: string[]): boolean => strings.findIndex((s) => s.length === 0) !== -1;
-
-	let inputs: string[] = [''];
-	let canAdd: boolean = true;
-	let canRemove: boolean = false;
-	let canSubmit: boolean = true;
-	let isError = false;
-	let isFetching: boolean = false;
-	let isReading: boolean = false;
-	$: canAdd = inputs.length < MAX_INPUTS && !anyEmpty(inputs);
-	$: canRemove = inputs.length !== 0;
-	$: canSubmit = !isFetching && anyContains(inputs);
-
 	const handleRemoveField = (idx: number) => {
-		if (inputs.length > 1) {
-			let newOpts = inputs.filter((value, i) => i != idx && value.length != 0);
-			inputs = newOpts.length === 0 ? [''] : newOpts.slice();
-			focusBottom(2);
+		if (canRemove) {
+			const newInputs = inputs.filter((input, i) => i !== idx && input.value.length !== 0);
+			inputs = newInputs.length === 0 ? [createInput()] : [...newInputs];
+			focusBottom();
 		}
 	};
 
-	const handleReset = (e: MouseEvent) => {
-		inputs = [''];
+	const handleReset = () => {
+		inputs = [createInput()];
 		isError = false;
 		errorMessage = null;
 		responseSegments = [];
 	};
 
-	const addFieldHandler = (value: string, idx: number) => {
+	const addFieldHandler = (value: string) => {
 		if (value.length !== 0 && inputs.length < MAX_INPUTS) {
 			handleAddField();
 		}
 
-		focusBottom(1);
+		focusBottom();
 	};
 
 	const handleAddField = () => {
-		inputs = [...inputs.filter((x) => x.length != 0), ''];
+		inputs = [...inputs.filter((input) => input.value.length !== 0), createInput()];
 	};
 
-	function focusBottom(nth: number) {
-		let els = document.querySelectorAll<HTMLInputElement>("form input[type='text']");
-		let e = els[els.length - nth];
-		if (document.contains(e)) {
-			e.focus();
-		}
+	function focusBottom() {
+		tick().then(() => inputElements[inputElements.length - 1]?.focus());
 	}
 
-	const focusSubmitButton = () =>
-		focusAction(document.getElementById('button-submit') as HTMLInputElement);
+	const focusSubmitButton = () => submitButton?.focus();
 
-	const focusAction = (e: HTMLInputElement) => e.focus();
+	const focusAction = (element: HTMLElement) => element.focus();
 
-	function handleOnKeyDown(e: any, i: number) {
-		if (e.key === 'Enter') {
-			e.preventDefault();
-			if (inputs.length >= MAX_INPUTS || (inputs[i].length === 0 && inputs.length - 1 >= i)) {
+	function handleOnSubmit(event: SubmitEvent) {
+		event.preventDefault();
+		submitInputs([...inputValues]);
+	}
+
+	function handleOnKeyDown(event: KeyboardEvent, idx: number) {
+		const input = event.currentTarget as HTMLInputElement;
+		const currentInput = inputs[idx];
+
+		if (currentInput === undefined) {
+			return;
+		}
+
+		if (event.key === 'Enter') {
+			event.preventDefault();
+			if (
+				inputs.length >= MAX_INPUTS ||
+				(currentInput.value.length === 0 && inputs.length - 1 >= idx)
+			) {
 				focusSubmitButton();
 			} else {
-				addFieldHandler(e.currentTarget.value, i);
+				addFieldHandler(input.value);
 			}
-		} else if (e.key === 'Backspace' && inputs[i].length === 0) {
-			e.preventDefault();
-			handleRemoveField(i);
-		} else if (e.key !== 'Tab') {
-			inputs[i] = e.currentTarget.value;
+		} else if (event.key === 'Backspace' && currentInput.value.length === 0) {
+			event.preventDefault();
+			handleRemoveField(idx);
 		}
 	}
 
-	function handleOnSubmit(params: string[]) {
+	function submitInputs(params: string[]) {
 		isFetching = true;
+		isError = false;
+		errorMessage = null;
+		isReading = false;
 		responseSegments = [];
 		callChunkedAsync(
 			{ entries: params.filter((p) => p?.length > 0) },
 			(v) => (responseSegments = appendSegment(responseSegments, v))
 		)
-			.catch((e: Error) => {
+			.catch((error: unknown) => {
 				isError = true;
-				errorMessage = e.stack || e.message;
+				errorMessage = error instanceof Error ? error.stack || error.message : String(error);
 			})
 			.finally(() => {
 				isFetching = false;
 				isReading = false;
 			});
-	}
-
-	function handleOnSubmit2(params: string[]) {
-		isFetching = true;
-		// responseSegments = [];
-		responseSegments = appendSegment(responseSegments, 'Linje 1\n\nLinje 2\n\nLinje 3');
-		isFetching = false;
 	}
 
 	/**
@@ -124,30 +135,26 @@
 	 *
 	 * @param segments - The array of segments which to append `v`.
 	 * @param v - The string to append.
-	 * @returns New egments with `v` appended.
+	 * @returns New segments with `v` appended.
 	 */
 	function appendSegment(segments: string[][], v: string): string[][] {
 		isReading = true;
 		const chunks = v.split('\n\n');
-		if (segments.length === 0 || segments[segments.length - 1].length === 0) {
-			const len = segments.length - 1;
-			for (let i = 0; i < chunks.length; i++) {
-				const chunk = chunks[i];
-				segments[len + i] = [chunk];
-			}
+		const lastSegment = segments[segments.length - 1];
 
-			return segments;
+		if (lastSegment === undefined || lastSegment.length === 0) {
+			const previousSegments = lastSegment === undefined ? segments : segments.slice(0, -1);
+
+			return [...previousSegments, ...chunks.map((chunk) => [chunk])];
 		}
 
-		const newSegments = [...segments];
-		newSegments[newSegments.length - 1].push(chunks[0]);
+		const [firstChunk, ...remainingChunks] = chunks;
 
-		if (chunks.length > 1) {
-			// Push remaining chunks as new segments.
-			newSegments.push([...chunks.slice(1)]);
-		}
-
-		return newSegments;
+		return [
+			...segments.slice(0, -1),
+			[...lastSegment, firstChunk],
+			...remainingChunks.map((chunk) => [chunk])
+		];
 	}
 </script>
 
@@ -157,24 +164,25 @@
 	</header>
 
 	<main>
-		<form action="" on:submit|preventDefault={() => handleOnSubmit(inputs)}>
-			{#each inputs as opt, idx}
+		<form action="" onsubmit={handleOnSubmit}>
+			{#each inputs as input, idx (input.id)}
 				<div class="input-row">
-					<fieldset on:submit|preventDefault disabled={isFetching}>
+					<fieldset disabled={isFetching}>
 						<button
 							type="button"
 							title="Tøm felt"
 							class="remove symbol nudge-left"
-							disabled={isFetching || inputs.length <= 1}
-							on:click={() => handleRemoveField(idx)}
-						/>
+							disabled={isFetching || !canRemove}
+							onclick={() => handleRemoveField(idx)}
+						></button>
 						<input
 							type="text"
 							maxlength={MAX_FIELD_LENGTH}
-							name="text-{0}"
+							name={`text-${idx}`}
 							disabled={isFetching}
-							on:keydown={(e) => handleOnKeyDown(e, idx)}
-							bind:value={opt}
+							onkeydown={(event) => handleOnKeyDown(event, idx)}
+							bind:value={input.value}
+							bind:this={inputElements[idx]}
 							use:focusAction
 						/>
 					</fieldset>
@@ -188,21 +196,21 @@
 						type="button"
 						class="add symbol nudge-left"
 						disabled={!canAdd || isFetching}
-						on:click={handleAddField}
-					/>
+						onclick={handleAddField}
+					></button>
 				</div>
 			{/if}
 
 			<div class="relative-container">
 				{#if isFetching && !isReading}
 					<div class="overlay">
-						<div class="loader" />
+						<div class="loader"></div>
 					</div>
 				{/if}
 				<div class="result-box">
-					{#each responseSegments as par}
+					{#each responseSegments as par, parIdx (parIdx)}
 						<p>
-							{#each par as sp}
+							{#each par as sp, spIdx (spIdx)}
 								<span>{sp}</span>
 							{/each}
 						</p>
@@ -222,10 +230,14 @@
 					title="Tøm alle felt"
 					class="reset"
 					disabled={isFetching}
-					on:click|preventDefault={handleReset}
-				/>
-				<button type="submit" id="button-submit" class="call" disabled={isFetching || !canSubmit}
-					>Send</button
+					onclick={handleReset}
+				></button>
+				<button
+					type="submit"
+					id="button-submit"
+					class="call"
+					disabled={isFetching || !canSubmit}
+					bind:this={submitButton}>Send</button
 				>
 			</div>
 		</form>

@@ -1,4 +1,6 @@
-// See https://kit.svelte.dev/docs/types#app
+/// <reference types="svelte-adapter-azure-swa" />
+
+// See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
 declare global {
 	namespace App {
