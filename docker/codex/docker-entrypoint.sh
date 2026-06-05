@@ -28,7 +28,7 @@ sed -i \
   -e '/^AcceptEnv /d' \
   -e '/^SetEnv /d' \
   "${sshd_config}"
-printf '\nPasswordAuthentication no\nKbdInteractiveAuthentication no\nPermitRootLogin no\nPubkeyAuthentication yes\nAllowUsers %s\nAcceptEnv LANG LC_* TERM COLORTERM TERM_PROGRAM WT_SESSION KITTY_* WEZTERM_* OPENAI_API_KEY CODEX_*\nSetEnv WT_SESSION=codex-sandbox TERM=xterm-sixel COLORTERM=truecolor FORCE_COLOR=1\n' "${username}" >> "${sshd_config}"
+printf '\nPasswordAuthentication no\nKbdInteractiveAuthentication no\nPermitRootLogin no\nPubkeyAuthentication yes\nAllowUsers %s\nAcceptEnv LANG LC_* TERM COLORTERM TERM_PROGRAM WT_SESSION KITTY_* WEZTERM_* OPENAI_API_KEY CODEX_*\nSetEnv WT_SESSION=codex-sandbox TERM=xterm-sixel COLORTERM=truecolor\n' "${username}" >> "${sshd_config}"
 
 if [ -n "${SSH_PUBLIC_KEY:-}" ]; then
   printf '%s\n' "${SSH_PUBLIC_KEY}" > "${authorized_keys}"

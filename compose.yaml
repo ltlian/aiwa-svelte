@@ -17,7 +17,6 @@ services:
     environment:
       TERM: ${CODEX_TERM:-xterm-sixel}
       COLORTERM: ${CODEX_COLORTERM:-truecolor}
-      FORCE_COLOR: ${FORCE_COLOR:-1}
       WT_SESSION: ${WT_SESSION:-}
       TERM_PROGRAM: ${TERM_PROGRAM:-}
       KITTY_WINDOW_ID: ${KITTY_WINDOW_ID:-}

@@ -7,7 +7,6 @@ ARG USER_GID=1001
 
 ENV TERM=xterm-sixel \
     COLORTERM=truecolor \
-    FORCE_COLOR=1 \
     SHELL=/bin/bash \
     SANDBOX_USERNAME=${USERNAME}
 
