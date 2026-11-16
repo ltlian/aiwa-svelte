@@ -15,6 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+          lfs: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
       - name: Log in to azure as service principal
         uses: azure/login@v3
         with:
@@ -23,26 +31,27 @@ jobs:
         run: |
           echo "VITE_AIWA_API_HOST=https://$(az webapp show -n aiwa-api -g aiwa --query 'defaultHostName' -o tsv)" >> $GITHUB_ENV
           echo "VITE_COMMIT_SHA=$GITHUB_SHA" >> $GITHUB_ENV
-      - uses: actions/checkout@v6
-        with:
-          submodules: true
-          lfs: false
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-      - name: Build And Deploy
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Type-check
+        run: npm run check
+      - name: Build
+        run: npm run build
+      - name: Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GRAY_PEBBLE_07E3A5403 }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
           action: 'upload'
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: './' # App source code path
-          api_location: 'build/server' # Api source code path - optional
-          output_location: 'build/static' # Built app content directory - optional
+          ###### Repository/Build Configurations ######
+          # The site is built in the steps above, so deploy the build output directly.
+          app_location: 'build'
+          output_location: ''
+          skip_app_build: true
+          skip_api_build: true
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:

@@ -2,10 +2,15 @@
 	"name": "aiwa-svelte",
 	"version": "0.0.2",
 	"private": true,
+	"type": "module",
+	"imports": {
+		"#lib/*": "./src/lib/*"
+	},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",
@@ -13,25 +18,26 @@
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
-		"@sveltejs/kit": "^2.70.3",
-		"@sveltejs/vite-plugin-svelte": "^7.1.2",
-		"@types/node": "^25.9.1",
-		"eslint": "^10.4.1",
+		"@sveltejs/adapter-static": "^4.0.1",
+		"@sveltejs/kit": "^3.2.0",
+		"@sveltejs/vite-plugin-svelte": "^7.3.1",
+		"@types/node": "^24.19.2",
+		"eslint": "^10.15.0",
 		"eslint-config-prettier": "^10.1.8",
-		"eslint-plugin-svelte": "^3.19.0",
-		"globals": "^17.6.0",
-		"prettier": "^3.8.3",
-		"prettier-plugin-svelte": "^4.1.0",
-		"svelte": "^5.56.2",
-		"svelte-adapter-azure-swa": "^0.22.1",
-		"svelte-check": "^4.6.0",
-		"tslib": "^2.8.1",
+		"eslint-plugin-svelte": "^3.24.1",
+		"globals": "^17.14.0",
+		"prettier": "^3.10.1",
+		"prettier-plugin-svelte": "^4.1.1",
+		"svelte": "^5.57.3",
+		"svelte-check": "^4.7.8",
 		"typescript": "^6.0.3",
-		"typescript-eslint": "^8.60.1",
-		"vite": "^8.0.16"
+		"typescript-eslint": "^8.73.0",
+		"vite": "^8.3.8"
+	},
+	"overrides": {
+		"deepmerge": "npm:@shivammathur/deepmerge@4.3.2"
 	},
 	"engines": {
-		"node": "^20.19.0 || ^22.13.0 || >=24"
-	},
-	"type": "module"
+		"node": "^22.17.0 || >=24"
+	}
 }

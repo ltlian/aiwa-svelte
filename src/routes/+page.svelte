@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { callChunkedAsync, callHealthCheckAsync } from '$lib/client';
+	import { callChunkedAsync, callHealthCheckAsync } from '#lib/client.ts';
+	import { VITE_COMMIT_SHA } from '$app/env/public';
 	import { onMount, tick } from 'svelte';
-	import '../style/theme.css';
 
 	const MAX_INPUTS = 5;
 	const MAX_FIELD_LENGTH = 127;
@@ -11,150 +11,132 @@
 		value: string;
 	};
 
+	type Fragment = {
+		key: string;
+		text: string;
+	};
+
 	let nextInputId = 1;
-	let responseSegments = $state<string[][]>([[]]);
-	let errorMessage = $state<string | null>(null);
 	let inputs = $state<InputField[]>([{ id: 0, value: '' }]);
-	let inputElements = $state<HTMLInputElement[]>([]);
-	let submitButton = $state<HTMLButtonElement>();
-	let isError = $state(false);
+	let chunks = $state<string[]>([]);
+	let errorMessage = $state<string | null>(null);
 	let isFetching = $state(false);
-	let isReading = $state(false);
+	let form = $state<HTMLFormElement>();
+	let submitButton = $state<HTMLButtonElement>();
 
-	const anyContains = (strings: string[]): boolean => strings.some((s) => s.length !== 0);
-
-	const anyEmpty = (strings: string[]): boolean => strings.some((s) => s.length === 0);
-
-	const inputValues = $derived(inputs.map((input) => input.value));
-	const canAdd = $derived(inputs.length < MAX_INPUTS && !anyEmpty(inputValues));
+	const values = $derived(inputs.map((input) => input.value));
+	const canAdd = $derived(inputs.length < MAX_INPUTS && values.every((value) => value !== ''));
 	const canRemove = $derived(inputs.length > 1);
-	const canSubmit = $derived(!isFetching && anyContains(inputValues));
+	const canSubmit = $derived(!isFetching && values.some((value) => value !== ''));
+	const paragraphs = $derived(groupChunks(chunks));
+	const isWaiting = $derived(isFetching && chunks.length === 0);
 
-	const createInput = (value = ''): InputField => ({ id: nextInputId++, value });
+	/**
+	 * Groups streamed chunks into paragraphs of fragments. Every chunk (or part of a
+	 * chunk split on a blank line) becomes its own fragment so that newly arrived text
+	 * can animate individually. Fragments are keyed by chunk and part index so they keep
+	 * their DOM identity as the stream grows; existing text is not re-animated.
+	 */
+	function groupChunks(chunks: string[]): Fragment[][] {
+		const paragraphs: Fragment[][] = [];
+
+		chunks.forEach((chunk, chunkIndex) => {
+			chunk.split('\n\n').forEach((text, partIndex) => {
+				const fragment = { key: `${chunkIndex}:${partIndex}`, text };
+
+				if (partIndex === 0 && paragraphs.length > 0) {
+					paragraphs[paragraphs.length - 1].push(fragment);
+				} else {
+					paragraphs.push([fragment]);
+				}
+			});
+		});
+
+		return paragraphs;
+	}
 
 	onMount(() => {
 		callHealthCheckAsync()
 			.then((response) => {
-				if (response.status !== 200) {
-					console.error('API responded with non-success.', response);
+				if (!response.ok) {
+					console.error(`API health check failed with status ${response.status}.`);
 				}
 			})
-			.catch(() => {
-				console.error('An error occurred while checking API liveness.');
+			.catch((error: unknown) => {
+				console.error('API health check failed.', error);
 			});
 	});
 
-	const handleRemoveField = (idx: number) => {
-		if (canRemove) {
-			const newInputs = inputs.filter((input, i) => i !== idx && input.value.length !== 0);
-			inputs = newInputs.length === 0 ? [createInput()] : [...newInputs];
-			focusBottom();
-		}
-	};
+	const createInput = (value = ''): InputField => ({ id: nextInputId++, value });
 
-	const handleReset = () => {
+	function focusLastInput() {
+		tick().then(() => {
+			const elements = form?.querySelectorAll('input');
+			elements?.[elements.length - 1]?.focus();
+		});
+	}
+
+	function focusSubmitButton() {
+		submitButton?.focus();
+	}
+
+	function addField() {
+		inputs = [...inputs.filter((input) => input.value !== ''), createInput()];
+		focusLastInput();
+	}
+
+	function removeField(index: number) {
+		if (!canRemove) return;
+
+		const remaining = inputs.filter((input, i) => i !== index && input.value !== '');
+		inputs = remaining.length === 0 ? [createInput()] : remaining;
+		focusLastInput();
+	}
+
+	function reset() {
 		inputs = [createInput()];
-		isError = false;
+		chunks = [];
 		errorMessage = null;
-		responseSegments = [];
-	};
-
-	const addFieldHandler = (value: string) => {
-		if (value.length !== 0 && inputs.length < MAX_INPUTS) {
-			handleAddField();
-		}
-
-		focusBottom();
-	};
-
-	const handleAddField = () => {
-		inputs = [...inputs.filter((input) => input.value.length !== 0), createInput()];
-	};
-
-	function focusBottom() {
-		tick().then(() => inputElements[inputElements.length - 1]?.focus());
 	}
 
-	const focusSubmitButton = () => submitButton?.focus();
-
-	const focusAction = (element: HTMLElement) => element.focus();
-
-	function handleOnSubmit(event: SubmitEvent) {
+	function handleSubmit(event: SubmitEvent) {
 		event.preventDefault();
-		submitInputs([...inputValues]);
+		submit([...values]);
 	}
 
-	function handleOnKeyDown(event: KeyboardEvent, idx: number) {
-		const input = event.currentTarget as HTMLInputElement;
-		const currentInput = inputs[idx];
+	async function submit(entries: string[]) {
+		isFetching = true;
+		chunks = [];
+		errorMessage = null;
 
-		if (currentInput === undefined) {
-			return;
+		try {
+			await callChunkedAsync({ entries: entries.filter((entry) => entry !== '') }, (segment) => {
+				if (segment !== '') chunks.push(segment);
+			});
+		} catch (error) {
+			console.error(error);
+			errorMessage = error instanceof Error ? error.message : String(error);
+		} finally {
+			isFetching = false;
 		}
+	}
+
+	function handleKeyDown(event: KeyboardEvent, index: number) {
+		const input = inputs[index];
+
+		if (input === undefined) return;
 
 		if (event.key === 'Enter') {
 			event.preventDefault();
-			if (
-				inputs.length >= MAX_INPUTS ||
-				(currentInput.value.length === 0 && inputs.length - 1 >= idx)
-			) {
+			if (inputs.length >= MAX_INPUTS || input.value === '') {
 				focusSubmitButton();
 			} else {
-				addFieldHandler(input.value);
+				addField();
 			}
-		} else if (event.key === 'Backspace' && currentInput.value.length === 0) {
+		} else if (event.key === 'Backspace' && input.value === '') {
 			event.preventDefault();
-			handleRemoveField(idx);
+			removeField(index);
 		}
-	}
-
-	function submitInputs(params: string[]) {
-		isFetching = true;
-		isError = false;
-		errorMessage = null;
-		isReading = false;
-		responseSegments = [];
-		callChunkedAsync(
-			{ entries: params.filter((p) => p?.length > 0) },
-			(v) => (responseSegments = appendSegment(responseSegments, v))
-		)
-			.catch((error: unknown) => {
-				isError = true;
-				errorMessage = error instanceof Error ? error.stack || error.message : String(error);
-			})
-			.finally(() => {
-				isFetching = false;
-				isReading = false;
-			});
-	}
-
-	/**
-	 * Appends the string `v`.
-	 * Splits `v` into chunks separated by double newlines.
-	 * Appends the first chunk to the last segment, and adds the rest as new segments.
-	 *
-	 * @param segments - The array of segments which to append `v`.
-	 * @param v - The string to append.
-	 * @returns New segments with `v` appended.
-	 */
-	function appendSegment(segments: string[][], v: string): string[][] {
-		isReading = true;
-		const chunks = v.split('\n\n');
-		const lastSegment = segments[segments.length - 1];
-
-		if (lastSegment === undefined || lastSegment.length === 0) {
-			const previousSegments = lastSegment === undefined ? segments : segments.slice(0, -1);
-
-			return [...previousSegments, ...chunks.map((chunk) => [chunk])];
-		}
-
-		const [firstChunk, ...remainingChunks] = chunks;
-
-		return [
-			...segments.slice(0, -1),
-			[...lastSegment, firstChunk],
-			...remainingChunks.map((chunk) => [chunk])
-		];
 	}
 </script>
 
@@ -164,26 +146,26 @@
 	</header>
 
 	<main>
-		<form action="" onsubmit={handleOnSubmit}>
+		<form action="" onsubmit={handleSubmit} bind:this={form}>
 			{#each inputs as input, idx (input.id)}
 				<div class="input-row">
 					<fieldset disabled={isFetching}>
 						<button
 							type="button"
 							title="Tøm felt"
+							aria-label="Tøm felt"
 							class="remove symbol nudge-left"
 							disabled={isFetching || !canRemove}
-							onclick={() => handleRemoveField(idx)}
+							onclick={() => removeField(idx)}
 						></button>
 						<input
 							type="text"
 							maxlength={MAX_FIELD_LENGTH}
 							name={`text-${idx}`}
+							aria-label={`Sak ${idx + 1}`}
 							disabled={isFetching}
-							onkeydown={(event) => handleOnKeyDown(event, idx)}
+							onkeydown={(event) => handleKeyDown(event, idx)}
 							bind:value={input.value}
-							bind:this={inputElements[idx]}
-							use:focusAction
 						/>
 					</fieldset>
 				</div>
@@ -193,34 +175,32 @@
 				<div class="input-row">
 					<button
 						title="Legg til"
+						aria-label="Legg til felt"
 						type="button"
 						class="add symbol nudge-left"
 						disabled={!canAdd || isFetching}
-						onclick={handleAddField}
+						onclick={addField}
 					></button>
 				</div>
 			{/if}
 
 			<div class="relative-container">
-				{#if isFetching && !isReading}
-					<div class="overlay">
+				{#if isWaiting}
+					<div class="overlay" role="status">
+						<span class="visually-hidden">Venter på svar</span>
 						<div class="loader"></div>
 					</div>
 				{/if}
 				<div class="result-box">
-					{#each responseSegments as par, parIdx (parIdx)}
+					{#each paragraphs as paragraph, paragraphIndex (paragraphIndex)}
 						<p>
-							{#each par as sp, spIdx (spIdx)}
-								<span>{sp}</span>
-							{/each}
+							{#each paragraph as fragment (fragment.key)}<span>{fragment.text}</span>{/each}
 						</p>
 					{/each}
 				</div>
-				{#if isError}
-					<div class="error-box">
-						<code>
-							{errorMessage}
-						</code>
+				{#if errorMessage !== null}
+					<div class="error-box" role="alert">
+						<code>{errorMessage}</code>
 					</div>
 				{/if}
 			</div>
@@ -228,9 +208,10 @@
 				<button
 					type="button"
 					title="Tøm alle felt"
+					aria-label="Tøm alle felt"
 					class="reset"
 					disabled={isFetching}
-					onclick={handleReset}
+					onclick={reset}
 				></button>
 				<button
 					type="submit"
@@ -248,9 +229,9 @@
 			Ikke inkluder personlig informasjon. Bruk heller forfalsket informasjon som du selv erstatter
 			i resultatet.
 		</p>
-		{#if import.meta.env.VITE_COMMIT_SHA !== undefined}
+		{#if VITE_COMMIT_SHA !== undefined}
 			<div>
-				<small>{import.meta.env.VITE_COMMIT_SHA}</small>
+				<small>{VITE_COMMIT_SHA}</small>
 			</div>
 		{/if}
 	</footer>
