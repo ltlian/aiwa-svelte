@@ -218,8 +218,10 @@
 					id="button-submit"
 					class="call"
 					disabled={isFetching || !canSubmit}
-					bind:this={submitButton}>Send</button
+					bind:this={submitButton}
 				>
+					Send
+				</button>
 			</div>
 		</form>
 	</main>

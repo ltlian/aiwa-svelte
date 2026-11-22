@@ -7,7 +7,7 @@ static SvelteKit site.
 
 ## Requirements
 
-- Node.js **22.17 or newer** (Node 24 LTS recommended — see `.nvmrc`)
+- Node.js **22.17 or newer** (Node 26 LTS recommended — see `.nvmrc`)
 - npm
 
 ## Running locally
